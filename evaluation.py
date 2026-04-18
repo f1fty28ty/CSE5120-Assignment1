@@ -70,10 +70,11 @@ print('Confusion Matrix:')
 print(cm)
 
 # Below are the metrics for computing classification accuracy, precision, recall and specificity
-TP = cm[0,0]
-TN = cm[1,1]
-FP = cm[0,1]
-FN = cm[1,0]
+i = np.argmax(np.diag(cm))
+TP = cm[i,i]
+FP = cm[:,i].sum() - TP
+FN = cm[i,:].sum() - TP
+TN = cm.sum() - TP - FP - FN
 
 print('Accuracy    : {0:0.4f}'.format(accuracy_score(y_test, y_pred_svm)))
 precision   = TP / (TP + FP)
@@ -93,10 +94,11 @@ print('Confusion Matrix:')
 print(cm)
 
 # Below are the metrics for computing classification accuracy, precision, recall and specificity
-TP = cm[0,0]
-TN = cm[1,1]
-FP = cm[0,1]
-FN = cm[1,0]
+i = np.argmax(np.diag(cm))
+TP = cm[i,i]
+FP = cm[:,i].sum() - TP
+FN = cm[i,:].sum() - TP
+TN = cm.sum() - TP - FP - FN
 
 print('Accuracy    : {0:0.4f}'.format(accuracy_score(y_test, y_pred_rf)))
 precision   = TP / (TP + FP)

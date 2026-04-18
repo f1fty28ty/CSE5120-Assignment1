@@ -115,10 +115,11 @@ print('\nSVM Confusion Matrix:')
 print(cm)
 
 # Below are the metrics for computing classification accuracy, precision, recall and specificity
-TP = cm[0,0]
-TN = cm[1,1]
-FP = cm[0,1]
-FN = cm[1,0]
+i = np.argmax(np.diag(cm))  # use the class with the most correct predictions
+TP = cm[i,i]
+FP = cm[:,i].sum() - TP
+FN = cm[i,:].sum() - TP
+TN = cm.sum() - TP - FP - FN
 
 # Compute Precision and use the following line to print it
 precision = TP / (TP + FP)
@@ -157,10 +158,11 @@ print('\nRandom Forest Confusion Matrix:')
 print(cm)
 
 # Below are the metrics for computing classification accuracy, precision, recall and specificity
-TP = cm[0,0]
-TN = cm[1,1]
-FP = cm[0,1]
-FN = cm[1,0]
+i = np.argmax(np.diag(cm))  # use the class with the most correct predictions
+TP = cm[i,i]
+FP = cm[:,i].sum() - TP
+FN = cm[i,:].sum() - TP
+TN = cm.sum() - TP - FP - FN
 
 # Compute Classification Accuracy and use the following line to print it
 classification_accuracy = accuracy_score(y_test, y_pred_rf)
