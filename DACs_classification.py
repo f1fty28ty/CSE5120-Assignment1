@@ -61,11 +61,10 @@ X = df.drop(columns=[target_col] + drop_cols)
 y = df[target_col]
  
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42, stratify=y)
-
-
-X_train = [] # Remove this line after implementing train test split
-X_test = [] # Remove this line after implementing train test split
-
+ 
+# Keep unscaled copies for Random Forest (Step 9)
+X_train_rf = X_train.copy()
+X_test_rf  = X_test.copy()
 
 # Do not do steps 6 - 8 for the Ramdom Forest Model
 # Step 6:
@@ -100,7 +99,7 @@ print('\nSVM Accuracy: {0:0.4f}'.format(accuracy_score(y_test, y_pred_svm)))
 
 # Save your SVC model (whatever name you have given your model) as .sav to upload with your submission
 # You can use the library pickle to save and load your model for this assignment
-with open('svm_model.sav', 'wb') as f:
+with open('SvmClassifier.sav', 'wb') as f:
     pickle.dump(svm_model, f)
 
 
@@ -118,18 +117,17 @@ FP = cm[0,1]
 FN = cm[1,0]
 
 # Compute Precision and use the following line to print it
-precision = 0 # Change this line to implement Precision formula
+precision = TP / (TP + FP)
 print('Precision : {0:0.3f}'.format(precision))
 
 
 # Compute Recall and use the following line to print it
-recall = 0 # Change this line to implement Recall formula
+recall = TP / (TP + FN)
 print('Recall or Sensitivity : {0:0.3f}'.format(recall))
-
 # Compute Specificity and use the following line to print it
-specificity = 0 # Change this line to implement Specificity formula
+specificity = TN / (TN + FP)
 print('Specificity : {0:0.3f}'.format(specificity))
-
+ 
 
 
 
@@ -147,13 +145,15 @@ print('\nRandom Forest Accuracy: {0:0.4f}'.format(accuracy_score(y_test, y_pred_
  
 # Save your Random Forest model (whatever name you have given your model) as .sav to upload with your submission
 # You can use the library pickle to save and load your model for this assignment
-with open('rf_model.sav', 'wb') as f:
+with open('RfClassifier.sav', 'wb') as f:
     pickle.dump(rf_model, f)
 
 
 # Optional: You can print test results of your model here if you want. Otherwise implement them in evaluation.py file
 # Get and print confusion matrix
-cm = [[]]
+cm = confusion_matrix(y_test, y_pred_rf)
+print('\nRandom Forest Confusion Matrix:')
+print(cm)
 # Below are the metrics for computing classification accuracy, precision, recall and specificity
 TP = cm[0,0]
 TN = cm[1,1]
@@ -162,18 +162,15 @@ FN = cm[1,0]
 
 
 # Compute Classification Accuracy and use the following line to print it
-classification_accuracy = 0
+classification_accuracy = accuracy_score(y_test, y_pred_rf)
 print('Classification accuracy : {0:0.4f}'.format(classification_accuracy))
-
 # Compute Precision and use the following line to print it
-precision = 0 # Change this line to implement Precision formula
+precision = TP / (TP + FP)
 print('Precision : {0:0.3f}'.format(precision))
 
-
 # Compute Recall and use the following line to print it
-recall = 0 # Change this line to implement Recall formula
+recall = TP / (TP + FN)
 print('Recall or Sensitivity : {0:0.3f}'.format(recall))
-
 # Compute Specificity and use the following line to print it
-specificity = 0 # Change this line to implement Specificity formula
+specificity = TN / (TN + FP)
 print('Specificity : {0:0.3f}'.format(specificity))
