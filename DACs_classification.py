@@ -11,6 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, accuracy_score
 import category_encoders as ce
 
+
 #Step 2:
 # Load dataset and show basic statistics
 # 1. Show dataset size (dimensions)
@@ -20,25 +21,26 @@ import category_encoders as ce
 df = pd.read_csv('disadvantaged_communities.csv')
 
 print("Dataset Size (rows, columns):", df.shape)
- 
+
 print("\nColumn Names:")
 print(df.columns.tolist())
- 
+
 print("\nTarget Class Distribution (CES 4.0 Percentile Range):")
-print(df[' CES 4.0 Percentile Range'].value_counts())
- 
+print(df['CES 4.0 Percentile Range'].value_counts())
+
 print("\nTarget Class Percentage Distribution:")
-print(df[' CES 4.0 Percentile Range'].value_counts(normalize=True).mul(100).round(2).astype(str) + '%')
+print(df['CES 4.0 Percentile Range'].value_counts(normalize=True).mul(100).round(2).astype(str) + '%')
+
 
 # Step 3:
 #Clean the dataset - you can eitherhandle the missing values in the dataset
 # with the mean of the columns attributes or remove rows the have missing values.
-target_col = ' CES 4.0 Percentile Range'
+target_col = 'CES 4.0 Percentile Range'
 df = df.dropna(subset=[target_col])
- 
+
 numeric_cols = df.select_dtypes(include=[np.number]).columns
 df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
- 
+
 object_cols = df.select_dtypes(include=['object']).columns
 for col in object_cols:
     df[col] = df[col].fillna(df[col].mode()[0])
@@ -46,9 +48,13 @@ for col in object_cols:
 
 # Step 4: 
 #Encode the Categorical Variables - Using OrdinalEncoder from the category_encoders library to encode categorical variables as ordinal integers
-categorical_features = [c for c in df.select_dtypes(include=['object']).columns if c != target_col]
+categorical_features = [c for c in df.select_dtypes(include=['object', 'str']).columns if c != target_col]
 encoder = ce.OrdinalEncoder(cols=categorical_features)
 df = encoder.fit_transform(df)
+
+# Fill any remaining NaNs after encoding (some columns may still have NaN)
+df = df.fillna(df.mean(numeric_only=True))
+
 
 # Step 5: 
 # Separate predictor variables from the target variable (attributes (X) and target variable (y) as we did in the class)
@@ -59,12 +65,13 @@ df = encoder.fit_transform(df)
 drop_cols = [c for c in ['CES 4.0 Score', 'CES 4.0 Percentile', 'DAC category', 'Census Tract'] if c in df.columns]
 X = df.drop(columns=[target_col] + drop_cols)
 y = df[target_col]
- 
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42, stratify=y)
- 
+
 # Keep unscaled copies for Random Forest (Step 9)
 X_train_rf = X_train.copy()
 X_test_rf  = X_test.copy()
+
 
 # Do not do steps 6 - 8 for the Ramdom Forest Model
 # Step 6:
@@ -77,9 +84,8 @@ X_test_scaled  = scaler.transform(X_test)
 # Step 7:
 # Below is the code to convert X_train and X_test into data frames for the next steps
 cols = X_train.columns
-X_train = pd.DataFrame(X_train, columns=[cols]) # pd is the imported pandas lirary - Import pandas as pd
-X_test = pd.DataFrame(X_test, columns=[cols]) # pd is the imported pandas lirary - Import pandas as pd
-
+X_train = pd.DataFrame(X_train_scaled, columns=[cols]) # pd is the imported pandas lirary - Import pandas as pd
+X_test = pd.DataFrame(X_test_scaled, columns=[cols]) # pd is the imported pandas lirary - Import pandas as pd
 
 
 # Step 8 - Build and train the SVM classifier
@@ -90,12 +96,11 @@ X_test = pd.DataFrame(X_test, columns=[cols]) # pd is the imported pandas lirary
 svm_model = SVC(kernel='rbf', C=10.0, gamma=0.3, random_state=42)
 svm_model.fit(X_train, y_train)
 
-
 # Test the above developed SVC on unseen pulsar dataset samples
 y_pred_svm = svm_model.predict(X_test)
+
 # compute and print accuracy score
 print('\nSVM Accuracy: {0:0.4f}'.format(accuracy_score(y_test, y_pred_svm)))
-
 
 # Save your SVC model (whatever name you have given your model) as .sav to upload with your submission
 # You can use the library pickle to save and load your model for this assignment
@@ -103,13 +108,12 @@ with open('SvmClassifier.sav', 'wb') as f:
     pickle.dump(svm_model, f)
 
 
-
-
 # Optional: You can print test results of your model here if you want. Otherwise implement them in evaluation.py file
 # Get and print confusion matrix
 cm = confusion_matrix(y_test, y_pred_svm)
 print('\nSVM Confusion Matrix:')
 print(cm)
+
 # Below are the metrics for computing classification accuracy, precision, recall and specificity
 TP = cm[0,0]
 TN = cm[1,1]
@@ -120,17 +124,13 @@ FN = cm[1,0]
 precision = TP / (TP + FP)
 print('Precision : {0:0.3f}'.format(precision))
 
-
 # Compute Recall and use the following line to print it
 recall = TP / (TP + FN)
 print('Recall or Sensitivity : {0:0.3f}'.format(recall))
+
 # Compute Specificity and use the following line to print it
 specificity = TN / (TN + FP)
 print('Specificity : {0:0.3f}'.format(specificity))
- 
-
-
-
 
 
 # Step 9: Build and train the Random Forest classifier
@@ -138,32 +138,34 @@ print('Specificity : {0:0.3f}'.format(specificity))
 # (n_estimators=10, random_state=0)
 rf_model = RandomForestClassifier(n_estimators=10, random_state=0)
 rf_model.fit(X_train_rf, y_train)
+
 # Test the above developed Random Forest model on unseen DACs dataset samples
 y_pred_rf = rf_model.predict(X_test_rf)
+
 # compute and print accuracy score
 print('\nRandom Forest Accuracy: {0:0.4f}'.format(accuracy_score(y_test, y_pred_rf)))
- 
+
 # Save your Random Forest model (whatever name you have given your model) as .sav to upload with your submission
 # You can use the library pickle to save and load your model for this assignment
 with open('RfClassifier.sav', 'wb') as f:
     pickle.dump(rf_model, f)
-
 
 # Optional: You can print test results of your model here if you want. Otherwise implement them in evaluation.py file
 # Get and print confusion matrix
 cm = confusion_matrix(y_test, y_pred_rf)
 print('\nRandom Forest Confusion Matrix:')
 print(cm)
+
 # Below are the metrics for computing classification accuracy, precision, recall and specificity
 TP = cm[0,0]
 TN = cm[1,1]
 FP = cm[0,1]
 FN = cm[1,0]
 
-
 # Compute Classification Accuracy and use the following line to print it
 classification_accuracy = accuracy_score(y_test, y_pred_rf)
 print('Classification accuracy : {0:0.4f}'.format(classification_accuracy))
+
 # Compute Precision and use the following line to print it
 precision = TP / (TP + FP)
 print('Precision : {0:0.3f}'.format(precision))
@@ -171,6 +173,7 @@ print('Precision : {0:0.3f}'.format(precision))
 # Compute Recall and use the following line to print it
 recall = TP / (TP + FN)
 print('Recall or Sensitivity : {0:0.3f}'.format(recall))
+
 # Compute Specificity and use the following line to print it
 specificity = TN / (TN + FP)
 print('Specificity : {0:0.3f}'.format(specificity))
