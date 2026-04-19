@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import pickle
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, accuracy_score
@@ -38,9 +38,18 @@ print(df['CES 4.0 Percentile Range'].value_counts(normalize=True).mul(100).round
 target_col = 'CES 4.0 Percentile Range'
 df = df.dropna(subset=[target_col])
 
+# Drop columns with 20%+ missing values as advised
+high_missing_cols = [
+    'Linguistic Isolation Pctl', 'Unemployment', 'Lead', 'Traffic',
+    'Low Birth Weight', 'Education', 'Housing Burden'
+]
+df = df.drop(columns=[c for c in high_missing_cols if c in df.columns])
+
+# Fill remaining missing numeric values with column mean
 numeric_cols = df.select_dtypes(include=[np.number]).columns
 df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
 
+# Fill remaining missing string/object values with column mode
 object_cols = df.select_dtypes(include=['object']).columns
 for col in object_cols:
     df[col] = df[col].fillna(df[col].mode()[0])
@@ -48,11 +57,12 @@ for col in object_cols:
 
 # Step 4: 
 #Encode the Categorical Variables - Using OrdinalEncoder from the category_encoders library to encode categorical variables as ordinal integers
+# Note: target column CES 4.0 Percentile Range is NOT encoded
 categorical_features = [c for c in df.select_dtypes(include=['object', 'str']).columns if c != target_col]
 encoder = ce.OrdinalEncoder(cols=categorical_features)
 df = encoder.fit_transform(df)
 
-# Fill any remaining NaNs after encoding (some columns may still have NaN)
+# Fill any remaining NaNs after encoding
 df = df.fillna(df.mean(numeric_only=True))
 
 
@@ -76,7 +86,7 @@ X_test_rf  = X_test.copy()
 # Do not do steps 6 - 8 for the Ramdom Forest Model
 # Step 6:
 # Standardize the features (Import StandardScaler here)
-scaler = StandardScaler()
+scaler = MinMaxScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled  = scaler.transform(X_test)
 
@@ -84,8 +94,8 @@ X_test_scaled  = scaler.transform(X_test)
 # Step 7:
 # Below is the code to convert X_train and X_test into data frames for the next steps
 cols = X_train.columns
-X_train = pd.DataFrame(X_train_scaled, columns=[cols]) # pd is the imported pandas lirary - Import pandas as pd
-X_test = pd.DataFrame(X_test_scaled, columns=[cols]) # pd is the imported pandas lirary - Import pandas as pd
+X_train = pd.DataFrame(X_train_scaled, columns=cols) # pd is the imported pandas lirary - Import pandas as pd
+X_test = pd.DataFrame(X_test_scaled, columns=cols) # pd is the imported pandas lirary - Import pandas as pd
 
 
 # Step 8 - Build and train the SVM classifier
@@ -93,7 +103,7 @@ X_test = pd.DataFrame(X_test_scaled, columns=[cols]) # pd is the imported pandas
    #    1. RBF kernel
    #    2. C=10.0 (Higher value of C means fewer outliers)
    #    3. gamma = 0.3 (Linear)
-svm_model = SVC(kernel='rbf', C=10.0, gamma=0.3, random_state=42)
+svm_model = SVC(kernel='rbf', C=8.0, gamma=0.3, random_state=42)
 svm_model.fit(X_train, y_train)
 
 # Test the above developed SVC on unseen pulsar dataset samples

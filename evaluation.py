@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import pickle
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import confusion_matrix, accuracy_score
 import category_encoders as ce
 
@@ -14,6 +14,13 @@ df = pd.read_csv('disadvantaged_communities.csv')
 
 target_col = 'CES 4.0 Percentile Range'
 df = df.dropna(subset=[target_col])
+
+# Drop columns with 20%+ missing values as advised
+high_missing_cols = [
+    'Linguistic Isolation Pctl', 'Unemployment', 'Lead', 'Traffic',
+    'Low Birth Weight', 'Education', 'Housing Burden'
+]
+df = df.drop(columns=[c for c in high_missing_cols if c in df.columns])
 
 numeric_cols = df.select_dtypes(include=[np.number]).columns
 df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
@@ -35,7 +42,7 @@ y = df[target_col]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10, random_state=42, stratify=y)
 
 # Scale for SVM
-scaler = StandardScaler()
+scaler = MinMaxScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled  = scaler.transform(X_test)
 cols = X_train.columns
